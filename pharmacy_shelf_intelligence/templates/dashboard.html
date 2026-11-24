@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · Pharmacy Shelf{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div><div class="eyebrow">OVERVIEW · {{ today.strftime('%A, %d %B %Y') }}</div><h1>Good morning, Nusrat.</h1><p class="muted">Here are the inventory decisions that deserve your attention today.</p></div>
+  <a class="button primary" href="{{ url_for('new_product') }}">＋ Add product</a>
+</div>
+<section class="stats">
+  <article class="stat"><span>Products monitored</span><strong>{{ total_products }}</strong><small>Unique products</small></article>
+  <article class="stat"><span>Decision items</span><strong class="{{ 'red' if action_count else 'green' }}">{{ action_count }}</strong><small>Across {{ total_batches }} batches</small></article>
+  <article class="stat"><span>Units in stock</span><strong>{{ "{:,}".format(total_units) }}</strong><small>Current recorded quantity</small></article>
+  <article class="stat"><span>Estimated exposure</span><strong>৳{{ "{:,.0f}".format(exposure) }}</strong><small>Potential purchase-cost exposure</small></article>
+</section>
+<section class="section-head"><div><h2>Today's decisions</h2><p class="muted">Prioritized by urgency and estimated risk. Low-risk items stay off this list.</p></div><a href="{{ url_for('inventory') }}" class="text-link">View all inventory →</a></section>
+{% if actions %}
+<div class="decision-list">
+{% for r in actions %}
+  <article class="decision-card">
+    <div class="priority-line"><span class="pill {{ 'danger' if r.priority >= 80 or r.risk == 'Expired' else 'warning' if r.priority >= 55 else 'neutral' }}">{{ r.risk }} · Priority {{ r.priority }}</span><span class="muted small">{{ r.days }} days to expiry</span></div>
+    <div class="decision-main"><div><h3>{{ r.product.name }}</h3><p class="muted small">{{ r.product.sku }} · Batch {{ r.batch.batch_code or ('#' ~ r.batch.id) }} · {{ r.product.supplier.name }}</p></div><strong class="exposure">৳{{ "{:,.0f}".format(r.exposure) }}</strong></div>
+    <div class="decision-metrics"><span><b>{{ r.batch.quantity }}</b> in stock</span><span><b>{{ r.leftover }}</b> expected leftover</span><span><b>{{ r.surplus_ratio }}%</b> surplus</span><span><b>{{ r.confidence }}</b> forecast confidence</span></div>
+    <p class="recommendation"><b>Recommended:</b> {{ r.recommendation }}</p>
+    <a class="text-link" href="{{ url_for('batch_detail', batch_id=r.batch.id) }}">Review decision →</a>
+  </article>
+{% endfor %}
+</div>
+{% else %}
+<div class="empty"><div class="empty-icon">✓</div><h3>No decisions needed right now</h3><p class="muted">Your recorded batches do not currently meet the action threshold.</p></div>
+{% endif %}
+<div class="notice"><b>How this works:</b> The app estimates demand from recorded sales, checks expiry and supplier return windows, then ranks items. Recommendations are advisory; verify stock, supplier terms and applicable regulations.</div>
+{% endblock %}
